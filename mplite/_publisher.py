@@ -6,7 +6,7 @@ from uuid import uuid4
 from threading import Thread
 from typing import Union
 
-from src.middleware.load_balancers import LoadBalancer
+from mplite.load_balancers import LoadBalancer
 
 
 def _recvall(conn: socket.socket, n: int) -> Union[bytes, None]:

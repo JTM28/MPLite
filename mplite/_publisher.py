@@ -1,3 +1,4 @@
+""" Provides publisher classes for publishing directly to the queue for the consumers """
 import socket
 import ast
 import struct
@@ -6,7 +7,7 @@ from uuid import uuid4
 from threading import Thread
 from typing import Union
 
-from mplite.load_balancers import LoadBalancer
+from mplite.load_balancers import SimpleLoadBalancer
 
 
 def _recvall(conn: socket.socket, n: int) -> Union[bytes, None]:
@@ -114,7 +115,10 @@ class _ManageConsumers(object):
                         self.pids[str(data)]['last-response'] = time()
 
 
-class SingleSocketPublisher(LoadBalancer):
+class SingleSocketPublisher(SimpleLoadBalancer):
+    """
+    Single publisher instance for publishing messages / tasks for all consumer instances process
+    """
     SEMAPHORE = None
     ADDR = ('0.0.0.0', 43132)
     _MANAGER = _ManageConsumers()

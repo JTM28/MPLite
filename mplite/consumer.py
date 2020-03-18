@@ -1,5 +1,4 @@
 import os
-from time import sleep
 from collections import OrderedDict
 
 
@@ -8,12 +7,15 @@ def sort_dict_by_value(dict_obj, reverse=True):
 
 
 class ConsumerObject(object):
+    """
+    Class providing the functions for consuming and processing messages and tasks published to the queue
+    """
     _internal_key = 'publisher-internal'
     _consumer_obj = None
     _is_threaded  = False
     _pid_sent     = False
 
-    def __init__(self, shared_queue, shared_index, lock, handler):
+    def __init__(self, shared_queue, shared_index, lock, handler, pipe=None):
         super().__init__()
         """
         :param ipc: The interprocess comm object used to distribute tasks.
@@ -26,41 +28,31 @@ class ConsumerObject(object):
         :param manage_pids: If true will halt on startup til all consumers have reported their PIDs to the publisher
         """
         self._use_socket_calls = False
-        self._max_consumers = 0
         self.consumer = shared_queue
         self.shared_index = shared_index
         self.sorted_queue = []
         self.lock = lock
-        self.handler = handler()
-        self.get()
+        self.handler = handler
+        if pipe is not None:
+            self.pipe = pipe
+        self.__call__()
 
     def __call__(self):
-        while self._pid_sent is False:
-            data = self.pipe.recv()
-            if data:
-                if isinstance(data, dict) and 'send' in data.keys():
-                    self.pipe.send({'pid': os.getpid(), 'ident': data['ident']})
-                    self._pid_sent = True
-        else:
-            self.get()
 
+        if hasattr(self, 'pipe'):
 
-    @property
-    def consumer_limit(self):
-        return self._max_consumers
+            while self._pid_sent is False:
+                data = self.pipe.recv()
+                if data:
 
-    @property
-    def consumer(self):
-        return self._consumer_obj
+                    if isinstance(data, dict) and 'send' in data.keys():
+                        self.pipe.send({'pid': os.getpid(), 'ident': data['ident']})
+                        self._pid_sent = True
+                        break
 
-    @consumer_limit.setter
-    def consumer_limit(self, n):
-        if isinstance(n, int):
-            self._max_consumers = n
+        self.handler = self.handler()   # Initialize the handler class
+        self.get()
 
-    @consumer.setter
-    def consumer(self, obj):
-        self._consumer_obj = obj
 
     def _internal_handler(self, cmd):
         if cmd == 'thread':
@@ -74,13 +66,13 @@ class ConsumerObject(object):
         self.lock.acquire(blocking=True)
         try:
             key = list(sort_dict_by_value(self.shared_index).keys())[0]
-            task = self.consumer[key]
+            msg = self.consumer[key]
             del self.shared_index[key]
             del self.consumer[key]
         finally:
             self.lock.release()
-            if 'task' in locals().keys():
-                return task
+            if 'msg' in locals().keys():
+                return locals()['msg']
             return
 
 
@@ -98,7 +90,6 @@ class ConsumerObject(object):
                 """
                 msg = self._get()
                 if msg is not None:
-                    print(msg)
                     self.handler.on_message(msg)
 
     def multithread(self):

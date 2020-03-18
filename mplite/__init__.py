@@ -7,40 +7,26 @@ from multiprocessing import (
 
 from mplite.consumer import ConsumerObject
 from mplite._publisher import SingleSocketPublisher
-
-
-
-
-class StreamInstance(object):
-    __slots__ = ['name', 'manager', 'index', 'queue']
-
-
-    def __init__(self, name, manager):
-        self.name = name
-        self.manager = manager
-        self.queue = manager.dict()
-        self.index = manager.dict()
-
-
-    def __setattr__(self, key, value):
-        object.__setattr__(self, key, value)
-
-
-    def __getattribute__(self, item):
-        return object.__getattribute__(self, item)
-
+from mplite.handlers import TaskHandler
 
 
 class MPLite(object):
     _handler = None
 
-    def __init__(self, handler_object):
+    def __init__(self,
+                 handler_object: object,
+                 allow_evals: bool = False,
+                 manage_pids: bool = False
+                 ):
+
         self.procs = []
         self.manager = Manager()
         self.pipes = {}
         self.shared_index = self.manager.dict()
         self.shared_queue = self.manager.dict()
         self.lock = self.manager.RLock()
+        self.allow_evals = allow_evals
+        self.manage_pids = manage_pids
         self._resolve(handler_object)
 
 
@@ -98,9 +84,10 @@ class MPLite(object):
         self._join()
 
 
-def main(consumers=3):
+def start_server(consumers=3, custom_handler=None, allow_evals=False, manage_pids=False):
+    if custom_handler is None:
+        mplite = MPLite(TaskHandler, allow_evals=allow_evals, manage_pids=manage_pids)
+    else:
+        mplite = MPLite(custom_handler, allow_evals=allow_evals, manage_pids=manage_pids)
+    mplite.run(consumers)
 
-    if __name__ == '__main__':
-        pass
-
-main()

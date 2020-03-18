@@ -8,7 +8,10 @@ def roc(x1, x2, n):
     return n / (x2 - x1)
 
 
-class LoadBalancer(object):
+class SimpleLoadBalancer(object):
+    """
+    Basic LB class for managing the publish rate to consumers
+    """
     __slots__ = ['_max_stack', '_queue_health', '_window', 'xstack', 'size', 'roc']
 
     def __init__(self):

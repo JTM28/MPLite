@@ -15,7 +15,7 @@ class ConsumerObject(object):
     _is_threaded  = False
     _pid_sent     = False
 
-    def __init__(self, shared_queue, shared_index, lock, handler, pipe=None):
+    def __init__(self, shared_queue, shared_index, lock, handler):
         super().__init__()
         """
         :param ipc: The interprocess comm object used to distribute tasks.
@@ -33,33 +33,11 @@ class ConsumerObject(object):
         self.sorted_queue = []
         self.lock = lock
         self.handler = handler
-        if pipe is not None:
-            self.pipe = pipe
         self.__call__()
 
     def __call__(self):
-
-        if hasattr(self, 'pipe'):
-
-            while self._pid_sent is False:
-                data = self.pipe.recv()
-                if data:
-
-                    if isinstance(data, dict) and 'send' in data.keys():
-                        self.pipe.send({'pid': os.getpid(), 'ident': data['ident']})
-                        self._pid_sent = True
-                        break
-
         self.handler = self.handler()   # Initialize the handler class
         self.get()
-
-
-    def _internal_handler(self, cmd):
-        if cmd == 'thread':
-            if self._is_threaded is False:
-                print('Threading')
-                self.multithread()
-            self._is_threaded = True
 
 
     def _get(self):

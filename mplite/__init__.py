@@ -16,7 +16,6 @@ class MPLite(object):
     def __init__(self,
                  handler_object: object,
                  allow_evals: bool = False,
-                 manage_pids: bool = False
                  ):
 
         self.procs = []
@@ -26,12 +25,12 @@ class MPLite(object):
         self.shared_queue = self.manager.dict()
         self.lock = self.manager.RLock()
         self.allow_evals = allow_evals
-        self.manage_pids = manage_pids
         self._resolve(handler_object)
 
 
     def _resolve(self, handler_object):
         self._handler = handler_object
+
 
     @property
     def cores(self):
@@ -77,6 +76,7 @@ class MPLite(object):
                                  'This may impact performance especially for CPU bound constraints' %
                                  (str(consumers), str(self.cores)))
 
+
         for i in range(consumers):
             self._create_proc(self.consumer)
         self._create_proc(self.publisher)
@@ -84,10 +84,10 @@ class MPLite(object):
         self._join()
 
 
-def start_server(consumers=3, custom_handler=None, allow_evals=False, manage_pids=False):
+def start_server(consumers=3, custom_handler=None, allow_evals=False):
     if custom_handler is None:
-        mplite = MPLite(TaskHandler, allow_evals=allow_evals, manage_pids=manage_pids)
+        mplite = MPLite(TaskHandler, allow_evals=allow_evals)
     else:
-        mplite = MPLite(custom_handler, allow_evals=allow_evals, manage_pids=manage_pids)
+        mplite = MPLite(custom_handler, allow_evals=allow_evals)
     mplite.run(consumers)
 

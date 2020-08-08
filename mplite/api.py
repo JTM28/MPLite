@@ -56,11 +56,17 @@ def publish(task, priority: int = 0):
         # Pack Data W/ Big-Endian Unsigned Int (Standard Byte Size 4)
         packed = struct.pack('>I', len(data)) + data
         conn.sendall(packed)
+        data = conn.recv(1024)
+        if data:
+            print(data)
+
+        else:
+            conn.close()
 
     try:
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            s.connect(('127.0.0.1', 43132))
+            s.connect(('127.0.0.1', 10000))
             msg = {'task': task, 'priority': priority}
             _pack_and_send(s, str(msg).encode('utf-8'))
 
@@ -71,4 +77,7 @@ def publish(task, priority: int = 0):
         print('mplite backend not connected')
 
 
+from threading import Thread
 
+for _ in range(100, 199):
+    Thread(target=publish, args=({"task": '%s' % str(_)}, 5)).start()

@@ -1,5 +1,5 @@
 from uuid import uuid4
-from mplite.publish import publish
+from mplite import publish
 
 
 
